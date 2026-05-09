@@ -15,3 +15,5 @@ livekit-plugins-silero
 tzdata
 langchain-openrouter
 langchain-ollama
+fastapi
+uvicorn

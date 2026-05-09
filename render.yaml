@@ -1,0 +1,36 @@
+services:
+  # 1. FastAPI Web Server (Serves the UI & Tokens)
+  - type: web
+    name: livekit-agent-web
+    env: python
+    buildCommand: pip install -r requirement.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+
+  # 2. LiveKit Background Worker (Connects to WebRTC and handles Voice/AI)
+  - type: worker
+    name: livekit-agent-worker
+    env: python
+    buildCommand: pip install -r requirement.txt
+    startCommand: python init_secrets.py && python agent.py start
+    envVars:
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: SARVAM_API_KEY
+        sync: false
+      - key: GOOGLE_CRED_JSON
+        sync: false
+      - key: GOOGLE_TOKEN_JSON
+        sync: false

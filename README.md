@@ -79,3 +79,17 @@ Click **"Connect to Agent"** and start speaking!
 - **Update Appointments**: Locates appointments by email and modifies times/titles dynamically.
 - **Cancel Appointments**: Confirms specific meeting details before safely deleting them.
 - **Dynamic Fallbacks**: Gracefully handles API rate limits by falling back to Gemini 2.0.
+
+## Production Deployment (Render)
+
+This project includes a `render.yaml` Blueprint file for seamless 1-click deployments to [Render](https://render.com). 
+It automatically deploys both the Web Server and the Background Worker as two separate, highly available services.
+
+### How to Deploy:
+1. Fork or push this repository to your GitHub account.
+2. Sign in to Render, go to **Blueprints**, and select **New Blueprint Instance**.
+3. Connect your repository.
+4. Render will detect the two services. Before deploying, you will be prompted to enter your Environment Variables.
+5. **Handling Google Secrets in the Cloud**: 
+   Since `credentials.json` and `token.json` are blocked from GitHub for your security, you must copy their contents and paste them as strings into the `GOOGLE_CRED_JSON` and `GOOGLE_TOKEN_JSON` environment variables in the Render dashboard. 
+   *(The `init_secrets.py` script will automatically recreate the JSON files securely when the server boots).*
