@@ -1,0 +1,17 @@
+livekit-agents[sarvam,openai,groq,langchain]
+python-dotenv
+langchain
+langchain-groq
+langchain-google-community
+langgraph
+sarvamai
+langchain-google-genai
+opentelemetry-exporter-otlp
+google-auth-oauthlib
+livekit-plugins-turn-detector
+livekit-plugins-noise-cancellation
+livekit-plugins-silero
+tzdata
+fastapi
+uvicorn
+python-dateutil

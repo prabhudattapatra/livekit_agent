@@ -6,6 +6,21 @@ import json
 
 from dotenv import load_dotenv
 load_dotenv()
+
+def _setup_google_secrets():
+    # Cloud environments inject secrets via Env Vars since files aren't committed
+    creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
+    token_json = os.getenv("GOOGLE_TOKEN_JSON")
+
+    if creds_json and not os.path.exists("credentials.json"):
+        with open("credentials.json", "w") as f:
+            f.write(creds_json)
+    
+    if token_json and not os.path.exists("token.json"):
+        with open("token.json", "w") as f:
+            f.write(token_json)
+
+_setup_google_secrets()
 from livekit.agents.beta.tools import EndCallTool
 from opentelemetry.sdk.trace import TracerProvider
 from livekit.agents.telemetry import set_tracer_provider
