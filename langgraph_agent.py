@@ -277,7 +277,7 @@ tools = [
     DeleteEventTool()
 ]
 
-primary_llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
+primary_llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
 fallback_llm_1 = ChatOllama(model="gemma4:e2b", temperature=0) 
 fallback_llm_2 = ChatGoogleGenerativeAI(model="gemini-2.0-flash-lite", temperature=0)
 

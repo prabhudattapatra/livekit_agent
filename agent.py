@@ -2,25 +2,9 @@ import asyncio
 import logging
 import uuid
 import os
-import json
 
 from dotenv import load_dotenv
 load_dotenv()
-
-def _setup_google_secrets():
-    # Cloud environments inject secrets via Env Vars since files aren't committed
-    creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
-    token_json = os.getenv("GOOGLE_TOKEN_JSON")
-
-    if creds_json and not os.path.exists("credentials.json"):
-        with open("credentials.json", "w") as f:
-            f.write(creds_json)
-    
-    if token_json and not os.path.exists("token.json"):
-        with open("token.json", "w") as f:
-            f.write(token_json)
-
-_setup_google_secrets()
 from livekit.agents.beta.tools import EndCallTool
 from opentelemetry.sdk.trace import TracerProvider
 from livekit.agents.telemetry import set_tracer_provider
@@ -106,19 +90,9 @@ async def entrypoint(ctx: JobContext):
         agent=CalendarAgent(),
         room=ctx.room,
     )
-
-    async def publish_ui_event(event_type: str, data: dict):
-        try:
-            payload = json.dumps({"type": event_type, **data}).encode('utf-8')
-            await ctx.room.local_participant.publish_data(payload=payload, topic="ui_updates")
-        except Exception as e:
-            logger.error(f"Failed to publish UI event: {e}")
-
-    @session.on("agent_state_changed")
-    def on_agent_state(ev):
-        # Convert Enum to string safely
-        new_state_str = str(getattr(ev, "new_state", "")).split(".")[-1].lower()
-        asyncio.create_task(publish_ui_event("agent_state", {"state": new_state_str}))
+    
+    # Start the timer for the first time after greeting
+    # (Removed as part of inactivity timer removal)
 
     background_audio = BackgroundAudioPlayer(
         ambient_sound=AudioConfig(BuiltinAudioClip.OFFICE_AMBIENCE, volume=1.0),

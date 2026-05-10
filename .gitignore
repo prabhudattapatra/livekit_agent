@@ -11,9 +11,5 @@ wheels/
 
 # Secrets and environment variables
 .env
-.env.*
-*.log
-
-# OAuth Secrets
 credentials.json
 token.json

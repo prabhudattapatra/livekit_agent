@@ -12,6 +12,3 @@ livekit-plugins-turn-detector
 livekit-plugins-noise-cancellation
 livekit-plugins-silero
 tzdata
-fastapi
-uvicorn
-python-dateutil
