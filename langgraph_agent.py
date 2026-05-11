@@ -16,13 +16,12 @@ from langchain_google_community.calendar.delete_event import CalendarDeleteEvent
 from langgraph.graph import StateGraph, START
 from typing import TypedDict
 from langchain_core.messages import BaseMessage, AIMessage, SystemMessage, HumanMessage
-from langgraph.checkpoint.memory import InMemorySaver
+
 from langchain_groq import ChatGroq
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 from groq import RateLimitError as GroqRateLimitError
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_ollama import ChatOllama
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -277,8 +276,8 @@ tools = [
     DeleteEventTool()
 ]
 
-primary_llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
-fallback_llm_1 = ChatOllama(model="gemma4:e2b", temperature=0) 
+primary_llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
+fallback_llm_1 = ChatGroq(model="llama-3.1-8b-instant", temperature=0) 
 fallback_llm_2 = ChatGoogleGenerativeAI(model="gemini-2.0-flash-lite", temperature=0)
 
 # Chain them together
@@ -479,18 +478,33 @@ async def chat_node(state: ChatState):
 
     stream_writer = get_stream_writer()
     full_response = None
+    stop_streaming = False
+    
     try:
         async for chunk in llm_with_tools.astream(messages_with_system):
-            # ✅ FIX 2: Only stream real text chunks, skip tool call fragments
-            # Tool call chunks have no string content — they carry structured tool_calls instead
-            # Streaming them causes raw function syntax to appear in voice/chat output
+            # If Langchain detects a tool call chunk, stop streaming text
+            if getattr(chunk, "tool_calls", None) or getattr(chunk, "tool_call_chunks", None):
+                stop_streaming = True
+
             if (
                 chunk.content
                 and isinstance(chunk.content, str)
-                and not getattr(chunk, "tool_calls", None)
-                and not getattr(chunk, "tool_call_chunks", None)  # catches partial streaming chunks
+                and not stop_streaming
             ):
-                stream_writer(chunk.content)
+                text = chunk.content
+                # Heuristic to catch Groq/Llama raw tool call syntax
+                if "<function" in text or "<tool" in text:
+                    stop_streaming = True
+                    text = text.split("<function")[0].split("<tool")[0]
+                
+                # Check for stray opening brackets that might be tool calls
+                if text == "<" or text == "</":
+                    # Buffer it or just skip it. For simplicity, we can skip standalone '<'
+                    continue
+
+                if text:
+                    stream_writer(text)
+            
             full_response = chunk if full_response is None else full_response + chunk
     except Exception as e:
         import traceback
@@ -544,8 +558,7 @@ async def tool_node_with_ack(state: ChatState):
 # PART 6: Build & Compile Graph
 # =============================================================================
 
-def create_calendar_graph():
-    checkpointer = InMemorySaver()
+def create_calendar_graph(checkpointer=None):
     graph = StateGraph(ChatState)
 
     graph.add_node("chat_node", chat_node)

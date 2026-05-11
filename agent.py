@@ -1,4 +1,8 @@
 import asyncio
+import sys
+
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 import logging
 import uuid
 import os
@@ -62,6 +66,17 @@ server = AgentServer()
 async def entrypoint(ctx: JobContext):
     session_id = str(uuid.uuid4())
 
+    DB_URI = os.getenv("DATABASE_URL")
+    
+    if DB_URI:
+        from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+        async with AsyncPostgresSaver.from_conn_string(DB_URI) as checkpointer:
+            await checkpointer.setup()
+            await _run_session(ctx, session_id, checkpointer)
+    else:
+        await _run_session(ctx, session_id, None)
+
+async def _run_session(ctx: JobContext, session_id: str, checkpointer):
     session = AgentSession(
         stt=sarvam.STT(
             language="en-IN",
@@ -70,7 +85,7 @@ async def entrypoint(ctx: JobContext):
             flush_signal=True,       
         ),
         llm=langchain.LLMAdapter(
-            graph=create_calendar_graph(),
+            graph=create_calendar_graph(checkpointer),
             config={"configurable": {"thread_id": session_id}},
             stream_mode="custom",   
         ),
@@ -84,20 +99,20 @@ async def entrypoint(ctx: JobContext):
         preemptive_generation=False, 
     )
 
-
-
     await session.start(
         agent=CalendarAgent(),
         room=ctx.room,
     )
     
-    # Start the timer for the first time after greeting
-    # (Removed as part of inactivity timer removal)
-
     background_audio = BackgroundAudioPlayer(
         ambient_sound=AudioConfig(BuiltinAudioClip.OFFICE_AMBIENCE, volume=1.0),
     )
     await background_audio.start(room=ctx.room, agent_session=session)
+    
+    # Wait until the room is disconnected to keep the checkpointer pool alive
+    shutdown_event = asyncio.Event()
+    ctx.room.on("disconnected", lambda *args: shutdown_event.set())
+    await shutdown_event.wait()
 
 
 if __name__ == "__main__":
