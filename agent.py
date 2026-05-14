@@ -27,6 +27,23 @@ def setup_langsmith():
 
 setup_langsmith()
 
+def setup_google_credentials():
+    # Reconstruct credentials.json and token.json from env vars if they exist
+    creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
+    token_json = os.getenv("GOOGLE_TOKEN_JSON")
+    
+    if creds_json:
+        with open("credentials.json", "w") as f:
+            f.write(creds_json)
+        print("✅ Reconstructed credentials.json")
+        
+    if token_json:
+        with open("token.json", "w") as f:
+            f.write(token_json)
+        print("✅ Reconstructed token.json")
+
+setup_google_credentials()
+
 from livekit.agents import (
     Agent,
     AgentServer,
