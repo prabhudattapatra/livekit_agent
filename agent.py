@@ -38,7 +38,7 @@ from livekit.agents import (
     cli,
     room_io,
 )
-from livekit.plugins import cartesia, sarvam, langchain
+from livekit.plugins import sarvam, langchain
 from langgraph_agent import create_calendar_graph
 
 logger = logging.getLogger("calendar-agent")
