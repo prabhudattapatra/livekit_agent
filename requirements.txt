@@ -14,3 +14,4 @@ livekit-plugins-silero
 tzdata
 langgraph-checkpoint-postgres
 psycopg[binary,pool]
+python-dateutil
